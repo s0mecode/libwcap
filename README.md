@@ -28,9 +28,7 @@ the system libraries it links against.
 ## Building
 
 ```bash
-mkdir build && cd build
-cmake ..
-make
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
 ```
 
 The build produces:
