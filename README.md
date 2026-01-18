@@ -79,7 +79,7 @@ namespace wcap {
 ---
 ## License
 
-MIT – see the `LICENSE` file.
+Apache-2.0 – see the `LICENSE` file.
 
 ---
 ## Contributing
