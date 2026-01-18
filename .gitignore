@@ -1,0 +1,8 @@
+build/
+.vscode/
+.idea/
+*.o
+*.so
+example_simple
+snapshot.png
+cmake-build-debug/
