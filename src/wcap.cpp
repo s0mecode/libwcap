@@ -1,12 +1,9 @@
-#include <iostream>
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <gst/video/video.h>
 #include <gio/gio.h>
-#include <thread>
-#include <algorithm>
 #include <string>
-#include <cstring> 
+#include <cstring>
 #include <unistd.h>
 #include "wcap.hpp"
 
@@ -145,33 +142,35 @@ static void detect_bounds(const uint8_t* data, int width, int height, int stride
     int min_y = 0, max_y = height - 1, min_x = 0, max_x = width - 1;
     bool found = false;
     for (; min_y < height; ++min_y) {
-        const uint8_t* row = data + (min_y * stride);
-        for (int i = 0; i < width * 4; i += 4) if (row[i] | row[i+1] | row[i+2]) { found = true; break; }
+        const uint8_t* p = data + (min_y * stride);
+        for (int i = 0; i < width; ++i, p += 4) if (p[0] | p[1] | p[2]) { found = true; break; }
         if (found) break;
     }
     if (!found) { x = 0; y = 0; w = width; h = height; return; }
     for (; max_y >= min_y; --max_y) {
-        const uint8_t* row = data + (max_y * stride);
-        int i = 0; for (; i < width * 4; i += 4) if (row[i] | row[i+1] | row[i+2]) break;
-        if (i < width * 4) break;
+        const uint8_t* p = data + (max_y * stride);
+        int i = 0; for (; i < width; ++i, p += 4) if (p[0] | p[1] | p[2]) break;
+        if (i < width) break;
     }
     found = false;
     for (; min_x < width; ++min_x) {
         for (int k = min_y; k <= max_y; ++k) {
-            const uint8_t* px = data + (k * stride) + (min_x * 4); if (px[0] | px[1] | px[2]) { found = true; break; }
+            const uint8_t* px = data + (k * stride) + (min_x * 4);
+            if (px[0] | px[1] | px[2]) { found = true; break; }
         }
         if (found) break;
     }
     for (; max_x >= min_x; --max_x) {
         bool row_has_pixel = false;
         for (int k = min_y; k <= max_y; ++k) {
-            const uint8_t* px = data + (k * stride) + (max_x * 4); if (px[0] | px[1] | px[2]) { row_has_pixel = true; break; }
+            const uint8_t* px = data + (k * stride) + (max_x * 4);
+            if (px[0] | px[1] | px[2]) { row_has_pixel = true; break; }
         }
         if (row_has_pixel) break;
     }
     x = min_x; y = min_y; w = (max_x - min_x) + 1; h = (max_y - min_y) + 1;
     if (w <= 0 || h <= 0) { x = 0; y = 0; w = width; h = height; }
-}
+} 
 
 Frame ScreenCapture::get_frame() {
     Frame f = {0, 0, {}};
@@ -216,7 +215,11 @@ Frame ScreenCapture::get_frame() {
         for (int i = 0; i < ch; ++i) {
             const uint8_t* row_src = src_ptr + ((cy + i) * stride) + (cx * 4);
             uint8_t* row_dst = dst_ptr + (i * cw * 3);
-            std::memcpy(row_dst, row_src, static_cast<size_t>(cw) * 3);
+            const uint8_t* sp = row_src;
+            uint8_t* dp = row_dst;
+            for (int j = 0; j < cw; ++j, sp += 4, dp += 3) {
+                dp[0] = sp[0]; dp[1] = sp[1]; dp[2] = sp[2];
+            }
         }
         if (impl->frame_buffer.size() == needed) {
             f.data = std::move(impl->frame_buffer);
